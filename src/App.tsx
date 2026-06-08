@@ -14,6 +14,7 @@ import {
 } from './components/LandingSections';
 import LeadBoard from './components/LeadBoard';
 import DiagnosticWizard from './components/DiagnosticWizard';
+import AdminGalleryModal, { GalleryItem } from './components/AdminGalleryModal';
 import { DiagnosticInput } from './types';
 import { saveLead } from './utils';
 import { 
@@ -28,7 +29,9 @@ import {
   Database, 
   ArrowUpRight, 
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  Sliders,
+  Image as ImageIcon
 } from 'lucide-react';
 
 // Import carousel images statically so they are bundled correctly by Vite in production builds
@@ -63,18 +66,30 @@ export default function App() {
   const [showLeadBoard, setShowLeadBoard] = useState(false);
   const [completedCounter, setCompletedCounter] = useState(3419);
 
-  // Hero section image carousel state
-  const carouselImages = [
-    { src: heroGroup, label: '전문 연구진 그룹' },
-    { src: heroCafe, label: '카페 소상공인' },
-    { src: heroPottery, label: '전통 도예 공방' },
-    { src: heroManufacturing, label: '정밀 제조 중소기업' },
-    { src: heroRestaurant, label: '한식당 식음료업' },
-  ];
+  // Hero section image carousel state with localStorage dynamic cache
+  const [carouselImages, setCarouselImages] = useState<GalleryItem[]>(() => {
+    const saved = localStorage.getItem('hy_carousel_images');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse cached carousel images:', e);
+      }
+    }
+    return [
+      { id: '1', src: heroGroup, label: '전문 연구진 그룹' },
+      { id: '2', src: heroCafe, label: '카페 소상공인' },
+      { id: '3', src: heroPottery, label: '전통 도예 공방' },
+      { id: '4', src: heroManufacturing, label: '정밀 제조 중소기업' },
+      { id: '5', src: heroRestaurant, label: '한식당 식음료업' },
+    ];
+  });
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [showAdminGallery, setShowAdminGallery] = useState(false);
 
   // Auto-play the image rolling every 4.5 seconds
   useEffect(() => {
+    if (carouselImages.length === 0) return;
     const timer = setInterval(() => {
       setActiveImageIndex((prev) => (prev + 1) % carouselImages.length);
     }, 4500);
@@ -337,36 +352,59 @@ export default function App() {
               {/* Right Column: Beautiful rolling image slider representing diverse businesses, with no overlap or clipping */}
               <div className="md:col-span-7 order-1 md:order-2">
                 <div className="relative rounded-2xl md:rounded-3xl overflow-hidden border border-slate-200 shadow-lg bg-white aspect-[3/2] w-full flex flex-col justify-between p-2">
+                  {/* Floating Editing overlay buttons for ease of management testing */}
+                  <div className="absolute top-4 right-4 z-20 flex gap-1.5">
+                    <button 
+                      onClick={() => setShowAdminGallery(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-md hover:bg-blue-600 hover:text-white text-slate-800 text-[11px] font-bold rounded-lg border border-slate-250 shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                      title="히어로 갤러리 이미지 편집기 오픈"
+                      id="hero-floating-edit-btn"
+                    >
+                      <Sliders className="w-3.5 h-3.5 text-blue-600 hover:text-inherit" />
+                      <span>갤러리 편집</span>
+                    </button>
+                  </div>
+
                   <div className="relative flex-1 overflow-hidden w-full flex items-center justify-center min-h-[220px] md:min-h-[300px]">
                     <AnimatePresence mode="wait">
-                      <motion.img 
-                        key={activeImageIndex}
-                        src={carouselImages[activeImageIndex].src}
-                        alt={carouselImages[activeImageIndex].label}
-                        initial={{ opacity: 0, scale: 0.98, x: 10 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.98, x: -10 }}
-                        transition={{ duration: 0.4, ease: "easeInOut" }}
-                        className="w-full h-full object-contain filter-none"
-                        referrerPolicy="no-referrer"
-                      />
+                      {carouselImages.length > 0 ? (
+                        <motion.img 
+                          key={activeImageIndex >= carouselImages.length ? 0 : activeImageIndex}
+                          src={(carouselImages[activeImageIndex >= carouselImages.length ? 0 : activeImageIndex] || carouselImages[0]).src}
+                          alt={(carouselImages[activeImageIndex >= carouselImages.length ? 0 : activeImageIndex] || carouselImages[0]).label}
+                          initial={{ opacity: 0, scale: 0.98, x: 10 }}
+                          animate={{ opacity: 1, scale: 1, x: 0 }}
+                          exit={{ opacity: 0, scale: 0.98, x: -10 }}
+                          transition={{ duration: 0.4, ease: "easeInOut" }}
+                          className="w-full h-full object-contain filter-none"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="text-slate-400 text-xs flex flex-col items-center justify-center gap-1.5 p-4">
+                          <ImageIcon className="w-8 h-8 text-slate-350 stroke-1" />
+                          <span>등록된 갤러리 사진이 없습니다.</span>
+                        </div>
+                      )}
                     </AnimatePresence>
                   </div>
                   
                   {/* Indicator Dots indicating slider completion and active image index */}
                   <div className="flex justify-center gap-1.5 pb-1 pt-1 bg-white border-t border-slate-50/50 mt-1">
-                    {carouselImages.map((img, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setActiveImageIndex(idx)}
-                        className={`h-1.5 rounded-full transition-all duration-300 ${
-                          idx === activeImageIndex 
-                            ? 'w-6 bg-blue-600' 
-                            : 'w-1.5 bg-slate-200 hover:bg-slate-300'
-                        }`}
-                        title={img.label}
-                      />
-                    ))}
+                    {carouselImages.map((img, idx) => {
+                      const isActive = idx === (activeImageIndex >= carouselImages.length ? 0 : activeImageIndex);
+                      return (
+                        <button
+                          key={img.id || idx}
+                          onClick={() => setActiveImageIndex(idx)}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            isActive 
+                              ? 'w-6 bg-blue-600' 
+                              : 'w-1.5 bg-slate-200 hover:bg-slate-300'
+                          }`}
+                          title={img.label}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -720,22 +758,43 @@ export default function App() {
               </p>
             </div>
 
-            {/* Simulated Live Admin Panel for demo testing */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2.5 text-slate-300 max-w-xs w-full">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
-                <Database className="w-3.5 h-3.5 text-blue-400" />
-                <span>시연용 리드 확인 시스템</span>
+            {/* Simulated Live Admin Panels for demo testing */}
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:max-w-xl md:w-auto shrink-0">
+              {/* 1. Leads Board Admin */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2.5 text-slate-300 flex-1 min-w-[245px]">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
+                  <Database className="w-3.5 h-3.5 text-blue-400" />
+                  <span>시연용 리드 확인 시스템</span>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-normal font-sans">
+                  자가진단 신청 완료 후 제출된 대표님의 실시간 신청 리드가 어떻게 보존되고 축적관리되는지 리드 보드 데스크에서 확인해 보세요!
+                </p>
+                <button
+                  onClick={() => setShowLeadBoard(true)}
+                  className="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded text-[11px] font-bold tracking-tight transition-colors cursor-pointer border border-slate-700"
+                  id="footer-open-dashboard-btn"
+                >
+                  실시간 리드관리 모니터링 데스크 열기
+                </button>
               </div>
-              <p className="text-[10px] text-slate-500 leading-normal font-sans">
-                자가진단 신청 완료 후 제출된 대표님의 실시간 신청 리드가 어떻게 보존되고 축적관리되는지 리드 보드 대스크에서 확인해 보세요!
-              </p>
-              <button
-                onClick={() => setShowLeadBoard(true)}
-                className="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded text-[11px] font-bold tracking-tight transition-colors cursor-pointer border border-slate-700"
-                id="footer-open-dashboard-btn"
-              >
-                실시간 리드관리 모니터링 데스크 열기
-              </button>
+
+              {/* 2. Hero Slider Admin Panel */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2.5 text-slate-300 flex-1 min-w-[245px]">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
+                  <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>히어로 갤러리 관리 시스템</span>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-normal font-sans">
+                  메인 히어로 배너 영역의 이미지와 슬라이더 라벨을 업로드하고, 원복하거나, 노출 가짓수 및 슬라이딩 우선순위를 실시간 제정해 보세요!
+                </p>
+                <button
+                  onClick={() => setShowAdminGallery(true)}
+                  className="w-full py-1.5 bg-indigo-900/60 hover:bg-indigo-800 text-white rounded text-[11px] font-bold tracking-tight transition-colors cursor-pointer border border-indigo-750"
+                  id="footer-open-gallery-btn"
+                >
+                  히어로 이미지 갤러리 관리 데스크 열기
+                </button>
+              </div>
             </div>
           </div>
 
@@ -780,6 +839,20 @@ export default function App() {
         {showLeadBoard && (
           <LeadBoard 
             onClose={() => setShowLeadBoard(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* 4. Interactive Hero Rolling Gallery Admin Desk */}
+      <AnimatePresence>
+        {showAdminGallery && (
+          <AdminGalleryModal
+            initialItems={carouselImages}
+            onClose={() => setShowAdminGallery(false)}
+            onGalleryUpdate={(updatedList) => {
+              setCarouselImages(updatedList);
+              setActiveImageIndex(0); // Reset sliding index to primary
+            }}
           />
         )}
       </AnimatePresence>
