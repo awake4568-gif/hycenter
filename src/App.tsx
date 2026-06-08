@@ -184,42 +184,43 @@ export default function App() {
 
       {/* Primary Header Navbar */}
       <header className="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200/80 shadow-xs">
-        <div className="max-w-5xl mx-auto px-4 py-3 md:py-4 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="max-w-6xl mx-auto px-5 md:px-8 py-3 md:py-4 flex flex-col md:flex-row items-center justify-between gap-3">
           
           {/* Logo & Mobile Action */}
           <div className="flex items-center justify-between w-full md:w-auto">
-            <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div className="flex items-center gap-2.5 cursor-pointer group shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-sm border border-blue-500 transition-transform group-hover:scale-105">
                 <span className="font-extrabold text-sm font-sans tracking-tighter">HY</span>
               </div>
-              <div>
-                <span className="font-extrabold text-slate-900 text-sm md:text-base tracking-tight leading-none block">혜율정책자금지원센터</span>
-                <span className="text-[9px] text-slate-450 tracking-wider font-semibold font-mono block mt-1 uppercase leading-none">Diagnostic Center</span>
+              <div className="shrink-0 text-left">
+                <span className="font-extrabold text-slate-900 text-[13px] min-[370px]:text-sm md:text-base tracking-tight leading-none block whitespace-nowrap">혜율정책자금지원센터</span>
+                <span className="text-[8px] min-[370px]:text-[9px] text-slate-450 tracking-wider font-semibold font-mono block mt-1 uppercase leading-none whitespace-nowrap">Diagnostic Center</span>
               </div>
             </div>
             
-            <div className="flex items-center gap-1.5 md:hidden">
+            <div className="flex items-center gap-1 min-[370px]:gap-1.5 md:hidden shrink-0">
               <a 
                 href="https://pf.kakao.com/_xbgxlxnn/friend" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#FEE500] text-[#191919] shadow-xs active:scale-95 transition-transform cursor-pointer"
+                className="flex items-center justify-center w-7.5 h-7.5 min-[370px]:w-8 min-[370px]:h-8 rounded-lg bg-[#FEE500] text-[#191919] shadow-xs active:scale-95 transition-transform cursor-pointer shrink-0"
                 title="카카오톡 문의"
               >
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 min-[370px]:w-4 min-[370px]:h-4 fill-current" viewBox="0 0 24 24">
                   <path d="M12 3c-5.522 0-10 3.51-10 7.84 0 2.766 1.8 5.19 4.544 6.586-.184.673-.664 2.435-.76 2.802-.12.457.153.451.321.341.132-.087 2.096-1.424 2.935-1.996C10.05 18.847 11.01 18.9 12 18.9c5.522 0 10-3.51 10-7.84S17.522 3 12 3z" />
                 </svg>
               </a>
               <a 
                 href="tel:1533-2094" 
-                className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white shadow-xs active:scale-95 transition-transform cursor-pointer"
+                className="flex items-center justify-center w-7.5 h-7.5 min-[370px]:w-8 min-[370px]:h-8 rounded-lg bg-blue-600 text-white shadow-xs active:scale-95 transition-transform cursor-pointer shrink-0"
                 title="전화문의"
               >
-                <Phone className="w-3.5 h-3.5" />
+                <Phone className="w-3 h-3 min-[370px]:w-3.5 min-[370px]:h-3.5" />
               </a>
               <button 
+                id="nav-cta-btn"
                 onClick={handleScrollToForm}
-                className="text-[11px] font-extrabold px-2.5 py-1.5 bg-slate-900 text-white rounded-lg transition-transform active:scale-95 cursor-pointer shadow-xs"
+                className="text-[10px] min-[370px]:text-[11px] font-extrabold px-2 min-[370px]:px-2.5 py-1.5 bg-slate-900 text-white rounded-lg transition-transform active:scale-95 cursor-pointer shadow-xs whitespace-nowrap shrink-0"
               >
                 자가진단
               </button>
@@ -227,7 +228,7 @@ export default function App() {
           </div>
 
           {/* Chapters Navigation Menu */}
-          <nav className="flex items-center gap-1 md:gap-2 overflow-x-auto w-full md:w-auto py-1 px-1 -mx-4 md:mx-0 px-4 md:px-0 scrollbar-none border-t border-slate-100 md:border-t-0 justify-start md:justify-center">
+          <nav className="flex items-center gap-1 md:gap-2.5 overflow-x-auto w-full md:w-auto py-1 px-4 -mx-5 md:mx-0 md:px-0 scrollbar-none border-t border-slate-100 md:border-t-0 justify-start md:justify-center">
             {[
               { id: 'section-understanding', label: '정책자금 이해' },
               { id: 'section-criteria', label: '지원 요건' },
