@@ -31,6 +31,13 @@ import {
   AlertCircle
 } from 'lucide-react';
 
+// Import carousel images statically so they are bundled correctly by Vite in production builds
+import heroGroup from './assets/images/hy_hero_group_1780906118360.png';
+import heroCafe from './assets/images/hy_hero_cafe_1780910334373.png';
+import heroPottery from './assets/images/hy_hero_pottery_1780910349873.png';
+import heroManufacturing from './assets/images/hy_hero_manufacturing_1780910363887.png';
+import heroRestaurant from './assets/images/hy_hero_restaurant_1780910378961.png';
+
 export default function App() {
   // Navigation scrolls to diagnosis form
   const formRef = useRef<HTMLDivElement | null>(null);
@@ -58,11 +65,11 @@ export default function App() {
 
   // Hero section image carousel state
   const carouselImages = [
-    { src: '/src/assets/images/hy_hero_group_1780906118360.png', label: '전문 연구진 그룹' },
-    { src: '/src/assets/images/hy_hero_cafe_1780910334373.png', label: '카페 소상공인' },
-    { src: '/src/assets/images/hy_hero_pottery_1780910349873.png', label: '전통 도예 공방' },
-    { src: '/src/assets/images/hy_hero_manufacturing_1780910363887.png', label: '정밀 제조 중소기업' },
-    { src: '/src/assets/images/hy_hero_restaurant_1780910378961.png', label: '한식당 식음료업' },
+    { src: heroGroup, label: '전문 연구진 그룹' },
+    { src: heroCafe, label: '카페 소상공인' },
+    { src: heroPottery, label: '전통 도예 공방' },
+    { src: heroManufacturing, label: '정밀 제조 중소기업' },
+    { src: heroRestaurant, label: '한식당 식음료업' },
   ];
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
