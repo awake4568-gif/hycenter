@@ -31,7 +31,8 @@ import {
   ShieldCheck,
   AlertCircle,
   Sliders,
-  Image as ImageIcon
+  Image as ImageIcon,
+  X
 } from 'lucide-react';
 
 // Import carousel images statically so they are bundled correctly by Vite in production builds
@@ -86,6 +87,12 @@ export default function App() {
   });
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showAdminGallery, setShowAdminGallery] = useState(false);
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [showLeadsPasswordPrompt, setShowLeadsPasswordPrompt] = useState(false);
+  const [leadsPasswordInput, setLeadsPasswordInput] = useState('');
+  const [leadsPasswordError, setLeadsPasswordError] = useState('');
 
   // Auto-play the image rolling every 4.5 seconds
   useEffect(() => {
@@ -352,18 +359,6 @@ export default function App() {
               {/* Right Column: Beautiful rolling image slider representing diverse businesses, with no overlap or clipping */}
               <div className="md:col-span-7 order-1 md:order-2">
                 <div className="relative rounded-2xl md:rounded-3xl overflow-hidden border border-slate-200 shadow-lg bg-white aspect-[3/2] w-full flex flex-col justify-between p-2">
-                  {/* Floating Editing overlay buttons for ease of management testing */}
-                  <div className="absolute top-4 right-4 z-20 flex gap-1.5">
-                    <button 
-                      onClick={() => setShowAdminGallery(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-md hover:bg-blue-600 hover:text-white text-slate-800 text-[11px] font-bold rounded-lg border border-slate-250 shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                      title="히어로 갤러리 이미지 편집기 오픈"
-                      id="hero-floating-edit-btn"
-                    >
-                      <Sliders className="w-3.5 h-3.5 text-blue-600 hover:text-inherit" />
-                      <span>갤러리 편집</span>
-                    </button>
-                  </div>
 
                   <div className="relative flex-1 overflow-hidden w-full flex items-center justify-center min-h-[220px] md:min-h-[300px]">
                     <AnimatePresence mode="wait">
@@ -761,7 +756,10 @@ export default function App() {
             {/* Simulated Live Admin Panels for demo testing */}
             <div className="flex flex-col sm:flex-row gap-4 w-full md:max-w-xl md:w-auto shrink-0">
               {/* 1. Leads Board Admin */}
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2.5 text-slate-300 flex-1 min-w-[245px]">
+              <div 
+                onClick={() => setShowLeadsPasswordPrompt(true)}
+                className="bg-white/5 border border-white/10 hover:border-blue-500/50 rounded-xl p-4 space-y-2.5 text-slate-300 flex-1 min-w-[245px] cursor-pointer transition-all hover:bg-white/10"
+              >
                 <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
                   <Database className="w-3.5 h-3.5 text-blue-400" />
                   <span>시연용 리드 확인 시스템</span>
@@ -770,8 +768,11 @@ export default function App() {
                   자가진단 신청 완료 후 제출된 대표님의 실시간 신청 리드가 어떻게 보존되고 축적관리되는지 리드 보드 데스크에서 확인해 보세요!
                 </p>
                 <button
-                  onClick={() => setShowLeadBoard(true)}
-                  className="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded text-[11px] font-bold tracking-tight transition-colors cursor-pointer border border-slate-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowLeadsPasswordPrompt(true);
+                  }}
+                  className="w-full py-1.5 bg-slate-800 hover:bg-slate-705 text-white rounded text-[11px] font-bold tracking-tight transition-colors cursor-pointer border border-slate-700"
                   id="footer-open-dashboard-btn"
                 >
                   실시간 리드관리 모니터링 데스크 열기
@@ -788,7 +789,7 @@ export default function App() {
                   메인 히어로 배너 영역의 이미지와 슬라이더 라벨을 업로드하고, 원복하거나, 노출 가짓수 및 슬라이딩 우선순위를 실시간 제정해 보세요!
                 </p>
                 <button
-                  onClick={() => setShowAdminGallery(true)}
+                  onClick={() => setShowPasswordPrompt(true)}
                   className="w-full py-1.5 bg-indigo-900/60 hover:bg-indigo-800 text-white rounded text-[11px] font-bold tracking-tight transition-colors cursor-pointer border border-indigo-750"
                   id="footer-open-gallery-btn"
                 >
@@ -840,6 +841,188 @@ export default function App() {
           <LeadBoard 
             onClose={() => setShowLeadBoard(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Leads Board Admin Password prompt */}
+      <AnimatePresence>
+        {showLeadsPasswordPrompt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs font-sans">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full shadow-2xl relative"
+            >
+              <button 
+                onClick={() => {
+                  setShowLeadsPasswordPrompt(false);
+                  setLeadsPasswordInput('');
+                  setLeadsPasswordError('');
+                }}
+                className="absolute top-4 right-4 p-1 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                title="닫기"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex flex-col items-center text-center space-y-3 pt-2">
+                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100">
+                  <Database className="w-6 h-6 stroke-[1.75]" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-slate-900 text-sm md:text-base">리드 관리 시스템 인증</h4>
+                  <p className="text-xs text-slate-500 mt-1 leading-normal">
+                    고객들이 등록한 자가진단 최신 신청 정보를 확인하려면 관리자 비밀번호를 입력해 주십시오.
+                  </p>
+                </div>
+              </div>
+
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (leadsPasswordInput === '191435') {
+                    setLeadsPasswordError('');
+                    setLeadsPasswordInput('');
+                    setShowLeadsPasswordPrompt(false);
+                    setShowLeadBoard(true);
+                  } else {
+                    setLeadsPasswordError('비밀번호가 일치하지 않습니다. 다시 입력해 주세요.');
+                  }
+                }}
+                className="mt-6 space-y-4"
+              >
+                <div className="space-y-1.5">
+                  <input 
+                    type="password"
+                    placeholder="비밀번호 입력..."
+                    value={leadsPasswordInput}
+                    onChange={(e) => {
+                      setLeadsPasswordInput(e.target.value);
+                      if (leadsPasswordError) setLeadsPasswordError('');
+                    }}
+                    autoFocus
+                    maxLength={15}
+                    className="w-full text-center tracking-widest font-extrabold text-sm md:text-base p-3 bg-slate-50 border border-slate-250 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-950 focus:bg-white transition-all placeholder:tracking-normal placeholder:font-normal"
+                  />
+                  {leadsPasswordError && (
+                    <p className="text-[11px] font-semibold text-red-650 text-center animate-pulse">{leadsPasswordError}</p>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/10 cursor-pointer transition-colors"
+                  >
+                    본인 인증
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLeadsPasswordPrompt(false);
+                      setLeadsPasswordInput('');
+                      setLeadsPasswordError('');
+                    }}
+                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold border border-slate-200 cursor-pointer transition-colors"
+                  >
+                    취소
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Gallery Admin Password prompt */}
+      <AnimatePresence>
+        {showPasswordPrompt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs font-sans">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full shadow-2xl relative"
+            >
+              <button 
+                onClick={() => {
+                  setShowPasswordPrompt(false);
+                  setPasswordInput('');
+                  setPasswordError('');
+                }}
+                className="absolute top-4 right-4 p-1 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                title="닫기"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex flex-col items-center text-center space-y-3 pt-2">
+                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center border border-indigo-100">
+                  <ShieldCheck className="w-6 h-6 stroke-[1.75]" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-slate-900 text-sm md:text-base">갤러리 관리자 인증</h4>
+                  <p className="text-xs text-slate-500 mt-1 leading-normal">
+                    히어로 영역 슬라이더 사진을 구성하기 위해 관리자 비밀번호를 입력해 주십시오.
+                  </p>
+                </div>
+              </div>
+
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (passwordInput === '1914') {
+                    setPasswordError('');
+                    setPasswordInput('');
+                    setShowPasswordPrompt(false);
+                    setShowAdminGallery(true);
+                  } else {
+                    setPasswordError('비밀번호가 일치하지 않습니다. 다시 입력해 주세요.');
+                  }
+                }}
+                className="mt-6 space-y-4"
+              >
+                <div className="space-y-1.5">
+                  <input 
+                    type="password"
+                    placeholder="비밀번호 4자리 입력..."
+                    value={passwordInput}
+                    onChange={(e) => {
+                      setPasswordInput(e.target.value);
+                      if (passwordError) setPasswordError('');
+                    }}
+                    autoFocus
+                    maxLength={10}
+                    className="w-full text-center tracking-widest font-extrabold text-sm md:text-base p-3 bg-slate-50 border border-slate-250 rounded-xl focus:outline-none focus:ring-1 focus:ring-slate-950 focus:bg-white transition-all placeholder:tracking-normal placeholder:font-normal"
+                  />
+                  {passwordError && (
+                    <p className="text-[11px] font-semibold text-red-650 text-center animate-pulse">{passwordError}</p>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/10 cursor-pointer transition-colors"
+                  >
+                    본인 인증
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPasswordPrompt(false);
+                      setPasswordInput('');
+                      setPasswordError('');
+                    }}
+                    className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold border border-slate-200 cursor-pointer transition-colors"
+                  >
+                    취소
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
