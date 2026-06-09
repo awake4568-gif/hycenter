@@ -223,7 +223,7 @@ export default function App() {
               </div>
               <div className="shrink-0 text-left">
                 <span className="font-extrabold text-slate-900 text-[13px] min-[370px]:text-sm md:text-base tracking-tight leading-none block whitespace-nowrap">혜율정책자금지원센터</span>
-                <span className="text-[8px] min-[370px]:text-[9px] text-slate-450 tracking-wider font-semibold font-mono block mt-1 uppercase leading-none whitespace-nowrap">Diagnostic Center</span>
+                <span className="text-[8px] min-[370px]:text-[9px] text-slate-450 tracking-wider font-semibold font-mono block mt-1 uppercase leading-none whitespace-nowrap">Corporate Support Center</span>
               </div>
             </div>
             
