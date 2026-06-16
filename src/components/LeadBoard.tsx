@@ -11,7 +11,13 @@ import {
   deleteLeadFromStorage, 
   getIndustryLabel, 
   getYearsLabel, 
-  getRevenueLabel 
+  getRevenueLabel,
+  getStoredMetaPixelId,
+  setStoredMetaPixelId,
+  getPixelLogs,
+  clearPixelLogs,
+  PixelLog,
+  initMetaPixel
 } from '../utils';
 import { DiagnosticLead } from '../types';
 import { 
@@ -25,7 +31,10 @@ import {
   X, 
   FileText, 
   Save, 
-  Filter 
+  Filter,
+  Settings,
+  Zap,
+  RefreshCw
 } from 'lucide-react';
 
 interface LeadBoardProps {
@@ -42,6 +51,16 @@ export default function LeadBoard({ onClose }: LeadBoardProps) {
   const [memoStatus, setMemoStatus] = useState<'pending' | 'reviewing' | 'completed'>('pending');
   const [stats, setStats] = useState({ total: 0, pending: 0, reviewing: 0, completed: 0 });
 
+  // Meta Pixel state variables
+  const [pixelId, setPixelId] = useState('');
+  const [pixelLogs, setPixelLogs] = useState<PixelLog[]>([]);
+  const [pixelSaveMessage, setPixelSaveMessage] = useState('');
+  const [showPixelOnly, setShowPixelOnly] = useState(false);
+
+  const reloadPixelData = () => {
+    setPixelLogs(getPixelLogs());
+  };
+
   // Load leads from storage
   const reloadLeads = () => {
     const list = getStoredLeads();
@@ -54,13 +73,20 @@ export default function LeadBoard({ onClose }: LeadBoardProps) {
     const completed = list.filter(l => l.status === 'completed').length;
     
     setStats({ total, pending, reviewing, completed });
+    reloadPixelData();
   };
 
   useEffect(() => {
+    setPixelId(getStoredMetaPixelId());
     reloadLeads();
     // Setup listener for periodic updates
     const interval = setInterval(reloadLeads, 2000);
-    return () => clearInterval(interval);
+
+    window.addEventListener('storage', reloadPixelData);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', reloadPixelData);
+    };
   }, []);
 
   // Update selected lead notes or status
@@ -249,15 +275,33 @@ export default function LeadBoard({ onClose }: LeadBoardProps) {
                 </select>
               </div>
 
-              {/* Export Button */}
-              <button
-                onClick={handleExportCSV}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-medium shadow-sm transition-colors"
-                id="export-csv-btn"
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span>엑셀 파일 다운로드</span>
-              </button>
+              {/* Controls Group */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportCSV}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-medium shadow-sm transition-colors cursor-pointer"
+                  id="export-csv-btn"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>엑셀 파일 다운로드</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedLead(null);
+                    setShowPixelOnly(!showPixelOnly);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg text-xs font-medium shadow-sm transition-all cursor-pointer ${
+                    showPixelOnly 
+                      ? 'bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-500/30' 
+                      : 'bg-indigo-650 hover:bg-indigo-700'
+                  }`}
+                  id="pixel-settings-tab-btn"
+                  title="메타 픽셀(Meta Pixel) 광고 전환 추적 연동 관리"
+                >
+                  <Settings className="w-4 h-4 text-white/90 animate-spin-slow" />
+                  <span>메타 픽셀 연동 관리</span>
+                </button>
+              </div>
             </div>
 
             {/* List Table wrapper */}
@@ -278,6 +322,7 @@ export default function LeadBoard({ onClose }: LeadBoardProps) {
                           setSelectedLead(lead);
                           setMemoText(lead.adminMemo);
                           setMemoStatus(lead.status);
+                          setShowPixelOnly(false);
                         }}
                         className={`p-4 transition-colors cursor-pointer flex items-center justify-between hover:bg-slate-100 ${
                           isSelected ? 'bg-slate-200/80 border-l-4 border-slate-900' : 'bg-white'
@@ -344,7 +389,7 @@ export default function LeadBoard({ onClose }: LeadBoardProps) {
 
           {/* Right Detail Inspect Pane */}
           <div className="w-full md:w-96 flex flex-col bg-white overflow-y-auto border-l border-slate-200 font-sans">
-            {selectedLead ? (
+            {selectedLead && !showPixelOnly ? (
               <div className="flex-1 flex flex-col h-full">
                 
                 {/* Detail Section */}
@@ -359,7 +404,7 @@ export default function LeadBoard({ onClose }: LeadBoardProps) {
                   <p className="text-sm text-slate-600 mt-1">{selectedLead.name} 대표자 | {selectedLead.phone}</p>
                 </div>
 
-                <div className="p-5 space-y-5 flex-1 select-text">
+                <div className="p-5 space-y-5 flex-1 select-text font-sans">
                   
                   {/* Company Profile Card */}
                   <div className="text-xs space-y-2">
@@ -457,7 +502,7 @@ export default function LeadBoard({ onClose }: LeadBoardProps) {
 
                     <button
                       onClick={handleSaveMemo}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 bg-slate-900 hover:bg-slate-950 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-center gap-1.5 py-2 bg-slate-900 hover:bg-slate-950 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer font-sans"
                       id="memo-save-btn"
                     >
                       <Save className="w-3.5 h-3.5" />
@@ -468,12 +513,132 @@ export default function LeadBoard({ onClose }: LeadBoardProps) {
                 </div>
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-400 h-full">
-                <FileText className="w-12 h-12 mb-2 stroke-1 text-slate-300" />
-                <p className="text-sm font-semibold text-slate-600">진단 상세조회 가이드</p>
-                <p className="text-xs text-slate-400 mt-1 max-w-[200px] leading-relaxed">
-                  좌측 진단 리스트의 대표님 혹은 회사명을 선택하면 정밀 일치 분석 결과와 컨설팅 메모를 조회하고 수정할 수 있습니다.
-                </p>
+              <div className="flex-1 flex flex-col p-5 space-y-6 select-text overflow-y-auto">
+                {/* Pixel configuration form */}
+                <div className="p-4 bg-slate-900 rounded-2xl text-white border border-slate-800 shadow-lg relative overflow-hidden font-sans">
+                  <div className="absolute top-0 right-0 p-3 opacity-10">
+                    <Zap className="w-24 h-24 text-blue-400" />
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-1 px-2 rounded-md bg-blue-600/90 text-white text-[10px] font-bold font-mono uppercase tracking-wider">Meta Pixel Config</div>
+                    {pixelId ? (
+                      <span className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-800/60 animate-pulse">
+                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                        실시간 작동 상태
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-[10px] text-slate-400 font-bold bg-slate-850 px-2.5 py-0.5 rounded-full border border-slate-700">
+                        비활성화됨
+                      </span>
+                    )}
+                  </div>
+                  
+                  <h4 className="font-extrabold text-[13px] md:text-[14px]">메타 픽셀 광고 연동 센터</h4>
+                  <p className="text-[11px] text-slate-300 mt-1 leading-normal">
+                    페이스북(Meta) 광고를 진행하시는 경우, 고객들이 자가진단을 완료하고 디비를 남길 때 메타 픽셀의 <span className="font-semibold text-blue-400 font-mono">Standard Event (Lead)</span>를 연계 구동하여 광고 전환 성과를 추적할 수 있습니다.
+                  </p>
+
+                  <div className="mt-4 pt-4 border-t border-slate-800 space-y-2 text-xs">
+                    <label className="block text-[11px] font-bold text-slate-400">Meta Pixel ID (페이스북 픽셀 번호 입력)</label>
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text"
+                        placeholder="픽셀 아이디 번호 입력..."
+                        value={pixelId}
+                        onChange={(e) => {
+                          setPixelId(e.target.value.replace(/[^0-9]/g, ''));
+                          setPixelSaveMessage('');
+                        }}
+                        maxLength={20}
+                        className="flex-1 bg-slate-950 border border-slate-750 p-2 rounded-lg font-mono text-xs tracking-wider text-center text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        id="meta-pixel-id-input"
+                      />
+                      <button
+                        onClick={() => {
+                          setStoredMetaPixelId(pixelId);
+                          initMetaPixel();
+                          setPixelSaveMessage('설정이 정상 반영되었습니다!');
+                          setTimeout(() => setPixelSaveMessage(''), 2500);
+                        }}
+                        className="px-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                        id="save-pixel-id-btn"
+                      >
+                        적용
+                      </button>
+                    </div>
+                    {pixelSaveMessage && (
+                      <p className="text-[10px] text-emerald-400 font-semibold text-center animate-pulse">{pixelSaveMessage}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Pixel Live Logs Console */}
+                <div className="flex-1 flex flex-col min-h-[180px] bg-slate-50 border border-slate-200 rounded-xl overflow-hidden font-sans">
+                  <div className="px-3.5 py-2.5 bg-slate-100 border-b border-slate-200 flex justify-between items-center">
+                    <div className="flex items-center gap-1.5">
+                      <RefreshCw className="w-3.5 h-3.5 text-slate-600 animate-spin-slow" />
+                      <span className="text-xs font-bold text-slate-700">픽셀 추적 이벤트 수집 로그 (최신)</span>
+                    </div>
+                    {pixelLogs.length > 0 && (
+                      <button 
+                        onClick={() => {
+                          clearPixelLogs();
+                          setPixelLogs([]);
+                        }}
+                        className="text-[10px] text-red-650 hover:underline font-bold"
+                        id="clear-pixel-logs-btn"
+                      >
+                        로그 초기화
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 p-3 overflow-y-auto max-h-[190px] space-y-1.5 font-mono text-[10px] bg-slate-900 border-t border-slate-200">
+                    {pixelLogs.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 py-6">
+                        <Zap className="w-5 h-5 text-slate-500 stroke-[1.5] mb-1 animate-pulse" />
+                        <span className="text-[10px] leading-relaxed text-slate-400">수집된 픽셀 전송 로그가 없습니다.</span>
+                        <span className="text-[9px] text-slate-500 mt-0.5 whitespace-nowrap">자가진단을 제출하여 실제 픽셀 이벤트를 테스트 해보세요.</span>
+                      </div>
+                    ) : (
+                      pixelLogs.map((log) => (
+                        <div key={log.id} className="p-2.5 bg-slate-950 text-slate-200 rounded-lg border border-slate-800 space-y-1 relative">
+                          <div className="flex items-center justify-between text-slate-400 border-b border-slate-800 pb-1 flex-wrap gap-1">
+                            <span className="text-blue-400 font-bold">fbq('track', '{log.eventName}')</span>
+                            <span className="text-[9px] text-slate-500">{log.timestamp}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 block text-[9px] font-sans">전송 파라미터(Params):</span>
+                            <pre className="text-[9px] text-emerald-400 whitespace-pre-wrap leading-tight mt-0.5 overflow-x-auto font-mono max-h-[80px]">
+                              {JSON.stringify(log.params, null, 2)}
+                            </pre>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Info guidance footer summary */}
+                <div className="p-3.5 bg-blue-50/50 border border-blue-100 rounded-xl flex gap-2.5 items-start font-sans">
+                  <AlertCircle className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" />
+                  <div className="text-[11px] leading-relaxed text-blue-900">
+                    <strong className="block font-bold">💡 메타 픽셀 동작 검증 안내</strong>
+                    1. 메타 픽셀 번호 입력 및 적용 후 사이트에서 리드를 남기면 브라우저 백그라운드 및 프론트에서 페이스북 공식 SDK로 픽셀 전송을 수행합니다.<br/>
+                    2. 크롬 브라우저의 <span className="font-semibold">Pixel Helper 익스텐션</span>을 설치하여 실제 전송값 및 통화 규격을 손쉽게 테스트할 수 있습니다.
+                  </div>
+                </div>
+
+                {/* Guide notice is still available at bottom */}
+                <div className="pt-4 border-t border-slate-100 flex flex-col items-center justify-center text-center text-slate-400 font-sans">
+                  <FileText className="w-8 h-8 mb-1.5 stroke-1 text-slate-300" />
+                  <p className="text-xs font-semibold text-slate-500">진단 상세조회 가이드</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5 max-w-[200px] leading-relaxed">
+                    실시간 리드 리스트의 대표님 혹은 회사명을 선택하시면 세부 정책자금 맞춤 필터링 요약정보와 컨설턴트 기록 메모장 기능을 이용 수 있습니다.
+                  </p>
+                </div>
+
               </div>
             )}
           </div>

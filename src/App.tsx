@@ -15,8 +15,9 @@ import {
 import LeadBoard from './components/LeadBoard';
 import DiagnosticWizard from './components/DiagnosticWizard';
 import AdminGalleryModal, { GalleryItem } from './components/AdminGalleryModal';
+import BizCareLogo from './components/BizCareLogo';
 import { DiagnosticInput } from './types';
-import { saveLead } from './utils';
+import { saveLead, initMetaPixel, trackMetaPixelLead } from './utils';
 import { 
   Check, 
   ArrowRight, 
@@ -111,6 +112,11 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Initialize Meta Pixel tracking on application mount
+  useEffect(() => {
+    initMetaPixel();
+  }, []);
+
   // Format phone number utility as user types in real-time
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value.replace(/[^0-9]/g, '');
@@ -154,8 +160,11 @@ export default function App() {
       return;
     }
 
-    // Save lead to local storage
-    saveLead(formData);
+    // Save lead to local storage and capture return
+    const savedLead = saveLead(formData);
+
+    // Track Meta Pixel Lead standard event
+    trackMetaPixelLead(savedLead);
 
     // Open dynamic diagnostics analyzer simulation
     setActiveWizardInput({ ...formData });
@@ -183,7 +192,7 @@ export default function App() {
       {/* 1. Top Banner */}
       <div className="bg-slate-900 text-white py-2 px-4 md:px-8 text-[10px] uppercase font-bold border-b border-white/10 relative z-50 font-sans shadow-sm tracking-wide flex flex-col sm:flex-row justify-between items-center gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-blue-400 font-extrabold">혜율정책자금지원센터</span>
+          <span className="text-blue-400 font-extrabold">비즈케어정책자금연구소</span>
           <span className="text-white/75 font-normal tracking-normal hidden md:inline">| 누적 3,400여 개 소상공인·중소기업 진단 매칭 지원</span>
         </div>
         
@@ -217,14 +226,8 @@ export default function App() {
           
           {/* Logo & Mobile Action */}
           <div className="flex items-center justify-between w-full md:w-auto">
-            <div className="flex items-center gap-2.5 cursor-pointer group shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-sm border border-blue-500 transition-transform group-hover:scale-105">
-                <span className="font-extrabold text-sm font-sans tracking-tighter">HY</span>
-              </div>
-              <div className="shrink-0 text-left">
-                <span className="font-extrabold text-slate-900 text-[13px] min-[370px]:text-sm md:text-base tracking-tight leading-none block whitespace-nowrap">혜율정책자금지원센터</span>
-                <span className="text-[8px] min-[370px]:text-[9px] text-slate-450 tracking-wider font-semibold font-mono block mt-1 uppercase leading-none whitespace-nowrap">Corporate Support Center</span>
-              </div>
+            <div className="cursor-pointer group shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+              <BizCareLogo iconClassName="w-12 h-12 transition-transform group-hover:scale-105" />
             </div>
             
             <div className="flex items-center gap-1 min-[370px]:gap-1.5 md:hidden shrink-0">
@@ -342,7 +345,7 @@ export default function App() {
                 </div>
                 
                 <p className="text-slate-700 text-xs md:text-[13px] font-bold leading-relaxed font-sans bg-white border border-slate-150 p-4 rounded-2xl shadow-3xs">
-                  매년 복잡해지는 정책자금 지원 요건, 혜율정책자금지원센터의 인공지능 기반 분석 프로세스로 가장 확실하고 빠른 매칭 경로를 디자인해 드립니다.
+                  매년 복잡해지는 정책자금 지원 요건, 비즈케어정책자금연구소의 인공지능 기반 분석 프로세스로 가장 확실하고 빠른 매칭 경로를 디자인해 드립니다.
                 </p>
                 
                 <div className="pt-2">
@@ -744,10 +747,7 @@ export default function App() {
           {/* Logo & Callouts section */}
           <div className="flex flex-col md:flex-row items-start justify-between gap-6">
             <div className="space-y-2.5">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-extrabold tracking-tighter">HY</div>
-                <span className="font-bold text-white text-sm">혜율정책자금지원센터</span>
-              </div>
+              <BizCareLogo light iconClassName="w-11 h-11" />
               <p className="text-[11px] leading-relaxed max-w-sm text-slate-550">
                 본 자가진단 사전 분석 시스템은 중소기업과 소상공인이 지원 가능한 정책 사업 조건들을 정밀 타진하고 기업 상황에 부합하는 솔루션을 탐색하도록 제공하는 대화형 자가진단 플랫폼입니다.
               </p>
@@ -803,7 +803,7 @@ export default function App() {
           <div className="border-t border-white/10 pt-6 text-[11px] text-slate-405 grid grid-cols-1 md:grid-cols-2 gap-4 leading-normal">
             <div className="space-y-1.5 font-sans">
               <div className="flex flex-wrap gap-x-4 gap-y-1">
-                <span className="text-slate-300"><strong>회사이름:</strong> 혜율정책자금지원센터</span>
+                <span className="text-slate-300"><strong>회사이름:</strong> 비즈케어정책자금연구소</span>
                 <span><strong>대표자:</strong> 김민규</span>
                 <span><strong>사업자번호:</strong> 576-54-00650</span>
               </div>
@@ -818,7 +818,7 @@ export default function App() {
             
             <div className="text-[10px] text-slate-500 space-y-1.5 md:text-right flex flex-col justify-end">
               <p>※ 정책 전용 자금 자가진단 모델은 대표가 입력한 정성정량 지표만을 대입하는 1차 간이 결과표로서, 실제 관계 기관(신용보증기금, 기술보증기금, 소상공인시장진흥공단, 중소벤처기업진흥공단 등)의 최종 정밀 종합 등급 및 심사 결과와 수반 부결 여부는 해당기관 고유 지침 예산에 따라 판이할 수 있습니다.</p>
-              <p>© 2026 혜율정책자금지원센터. All Rights Reserved. (This is a persistent test environment simulation)</p>
+              <p>© 2026 비즈케어정책자금연구소. All Rights Reserved. (This is a persistent test environment simulation)</p>
             </div>
           </div>
 

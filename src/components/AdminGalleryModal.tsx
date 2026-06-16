@@ -114,7 +114,7 @@ export default function AdminGalleryModal({ onClose, onGalleryUpdate, initialIte
 
   // Reset to robust high-resolution default preset images
   const handleResetToPresets = () => {
-    if (window.confirm('히어로 갤러리 롤링 목록을 최초의 혜율정책자금지원센터 전문가 및 업종 대표 프리셋 5종으로 원복하시겠습니까?')) {
+    if (window.confirm('히어로 갤러리 롤링 목록을 최초의 비즈케어정책자금연구소 전문가 및 업종 대표 프리셋 5종으로 원복하시겠습니까?')) {
       setItems(DEFAULT_GALLERY_PRESETS);
     }
   };

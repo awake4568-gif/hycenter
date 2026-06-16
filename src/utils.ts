@@ -215,3 +215,151 @@ export function deleteLeadFromStorage(id: string): void {
     console.error(`${LOG_PREFIX} Error deleting lead:`, error);
   }
 }
+
+// Meta Pixel Config and Event Tracking
+const PIXEL_ID_KEY = 'meta_pixel_id';
+const DEFAULT_PIXEL_ID = '921384019481235'; // Default mock/demo Pixel ID
+const PIXEL_LOGS_KEY = 'meta_pixel_logs';
+
+export function getStoredMetaPixelId(): string {
+  if (typeof window === 'undefined') return '';
+  const saved = localStorage.getItem(PIXEL_ID_KEY);
+  if (saved === null) {
+    // Initialize default ID
+    localStorage.setItem(PIXEL_ID_KEY, DEFAULT_PIXEL_ID);
+    return DEFAULT_PIXEL_ID;
+  }
+  return saved;
+}
+
+export function setStoredMetaPixelId(pixelId: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(PIXEL_ID_KEY, pixelId.trim());
+}
+
+export interface PixelLog {
+  id: string;
+  timestamp: string;
+  eventName: string;
+  params: any;
+}
+
+export function getPixelLogs(): PixelLog[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const saved = localStorage.getItem(PIXEL_LOGS_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearPixelLogs(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(PIXEL_LOGS_KEY);
+}
+
+function addPixelLog(eventName: string, params: any) {
+  if (typeof window === 'undefined') return;
+  try {
+    const logs = getPixelLogs();
+    const now = new Date();
+    const timestamp = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    const newLog: PixelLog = {
+      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      timestamp,
+      eventName,
+      params
+    };
+    localStorage.setItem(PIXEL_LOGS_KEY, JSON.stringify([newLog, ...logs].slice(0, 30)));
+    // Dispatch standard storage event to trigger reactive reload on LeadBoard if open
+    window.dispatchEvent(new Event('storage'));
+  } catch (e) {
+    console.error('[MetaPixel] Log write error:', e);
+  }
+}
+
+interface FbWindow extends Window {
+  fbq?: any;
+  _fbq?: any;
+}
+
+export function initMetaPixel(): void {
+  if (typeof window === 'undefined') return;
+  const pixelId = getStoredMetaPixelId();
+  if (!pixelId) {
+    console.log('[MetaPixel] Empty pixel ID. Loading is deferred.');
+    return;
+  }
+
+  const w = window as unknown as FbWindow;
+  if (!w.fbq) {
+    w.fbq = function (...args: any[]) {
+      if (w.fbq.callMethod) {
+        w.fbq.callMethod(...args);
+      } else {
+        w.fbq.queue.push(args);
+      }
+    };
+    w.fbq.push = w.fbq;
+    w.fbq.loaded = true;
+    w.fbq.version = '2.0';
+    w.fbq.queue = [];
+    
+    // Create script element
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://connect.facebook.net/en_US/fbevents.js';
+    const firstScript = document.getElementsByTagName('script')[0];
+    if (firstScript && firstScript.parentNode) {
+      firstScript.parentNode.insertBefore(script, firstScript);
+    } else {
+      document.head.appendChild(script);
+    }
+  }
+
+  // Initialize
+  try {
+    w.fbq('init', pixelId);
+    w.fbq('track', 'PageView');
+    addPixelLog('PageView', { initializedPixelId: pixelId });
+    console.log(`[MetaPixel] Initialized successfully with ID: ${pixelId}`);
+  } catch (e) {
+    console.error('[MetaPixel] Initialization error:', e);
+  }
+}
+
+export function trackMetaPixelLead(lead: DiagnosticInput & { score?: number }): void {
+  if (typeof window === 'undefined') return;
+  const pixelId = getStoredMetaPixelId();
+  if (!pixelId) return;
+
+  const w = window as unknown as FbWindow;
+  const eventParams = {
+    content_name: '비즈케어정책자금 자가진단 신청',
+    content_category: lead.industry,
+    value: lead.revenue === 'more_than_1b' ? 1000000 : 300000,
+    currency: 'KRW',
+    predicted_score: lead.score || 85
+  };
+
+  // Re-verify initialization if fbq is not present
+  if (!w.fbq) {
+    initMetaPixel();
+  }
+
+  if (w.fbq) {
+    try {
+      w.fbq('track', 'Lead', eventParams);
+      addPixelLog('Lead', { ...eventParams, name: lead.name, companyName: lead.companyName });
+      console.log(`[MetaPixel] Tracked 'Lead' event successfully for ${lead.name}`);
+    } catch (e) {
+      console.error('[MetaPixel] Tracking Lead error:', e);
+    }
+  } else {
+    // Fallback log even if connection fails (e.g. adblocker)
+    addPixelLog('Lead (Fired via Proxy)', { ...eventParams, name: lead.name, companyName: lead.companyName, note: 'fbq script was blocked by browser, tracked locally' });
+    console.warn('[MetaPixel] fbq window object is not resolved yet, local logs updated.');
+  }
+}
+
